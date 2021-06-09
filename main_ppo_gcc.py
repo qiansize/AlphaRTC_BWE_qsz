@@ -20,7 +20,7 @@ from utils_ppo import load_config
 import torch.multiprocessing as mp
 import numpy as np
 from ActorCritic import ActorCritic
-from rtc_env_ppo import GymEnv
+from rtc_env_ppo_gcc import GymEnv
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
 
     lr = 3e-5                 # Adam parameters
     betas = (0.9, 0.999)
-    state_dim = 3
+    state_dim = 4
     state_length=10
     action_dim = 1
     data_path = './data/' # Save model and reward curve here
@@ -59,11 +59,11 @@ def main():
     for episode in range(max_num_episodes):
         while time_step < update_interval:
             done = False
-            state = torch.Tensor(env.reset()) #state tensor 3*10
-
+            state = torch.Tensor(env.reset()) #state tensor 4*10
+            gcc_estimation = 300000
             while not done and time_step < update_interval:
                 action = ppo.select_action(state, storage)
-                state, reward, done,_  = env.step(action)
+                state, reward, done, gcc_estimation= env.step(action, gcc_estimation)
 
                 state = torch.Tensor(state)
                 # Collect data for update
@@ -92,7 +92,7 @@ def main():
         episode_reward = 0
         time_step = 0
 
-    #ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_07_20_49_00.pth'))
+    #ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_08_23_22_59.pth'))
     utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

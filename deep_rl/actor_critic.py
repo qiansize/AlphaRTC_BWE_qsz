@@ -35,11 +35,12 @@ class ActorCritic(nn.Module):
         #         )
         self.layer1_shape = 128
         self.layer2_shape = 128
-        self.numFcInput = 3072
+        self.numFcInput = 4096
 
         self.rConv1d = nn.Conv1d(1, self.layer1_shape, 3)
         self.dConv1d = nn.Conv1d(1, self.layer1_shape, 3)
         self.lConv1d = nn.Conv1d(1, self.layer1_shape, 3)
+        self.pConv1d = nn.Conv1d(1, self.layer1_shape, 3)
 
         self.fc = nn.Linear(self.numFcInput, self.layer2_shape)
         self.actor_output = nn.Linear(self.layer2_shape, action_dim)
@@ -76,10 +77,12 @@ class ActorCritic(nn.Module):
         receivingConv = F.relu(self.rConv1d(inputs[:, 0:1, :]), inplace=True)
         delayConv = F.relu(self.dConv1d(inputs[:, 1:2, :]), inplace=True)
         lossConv = F.relu(self.lConv1d(inputs[:, 2:3, :]), inplace=True)
+        predicationConv = F.relu(self.lConv1d(inputs[:, 3:4, :]), inplace=True)
         receiving_flatten = receivingConv.view(receivingConv.shape[0], -1)
         delay_flatten = delayConv.view(delayConv.shape[0], -1)
         loss_flatten = lossConv.view(lossConv.shape[0], -1)
-        merge = torch.cat([receiving_flatten, delay_flatten, loss_flatten], 1)
+        predication_flatten = lossConv.view( predicationConv.shape[0], -1)
+        merge = torch.cat([receiving_flatten, delay_flatten, loss_flatten, predication_flatten], 1)
         fcOut = F.relu(self.fc(merge), inplace=True)
         action_mean = torch.sigmoid(self.actor_output(fcOut))
         cov_mat = torch.diag(self.action_var).to(self.device)
@@ -93,10 +96,12 @@ class ActorCritic(nn.Module):
         receivingConv_critic = F.relu(self.rConv1d(inputs[:, 0:1, :]), inplace=True)
         delayConv_critic = F.relu(self.dConv1d(inputs[:, 1:2, :]), inplace=True)
         lossConv_critic = F.relu(self.lConv1d(inputs[:, 2:3, :]), inplace=True)
+        predicationConv_critic = F.relu(self.lConv1d(inputs[:, 3:4, :]), inplace=True)
         receiving_flatten_critic = receivingConv.view(receivingConv_critic.shape[0], -1)
         delay_flatten_critic = delayConv.view(delayConv_critic.shape[0], -1)
         loss_flatten_critic = lossConv.view(lossConv_critic.shape[0], -1)
-        merge_critic = torch.cat([receiving_flatten_critic, delay_flatten_critic, loss_flatten_critic], 1)
+        predication_flatten_critic = lossConv.view(predicationConv_critic.shape[0], -1)
+        merge_critic = torch.cat([receiving_flatten_critic, delay_flatten_critic, loss_flatten_critic,predication_flatten_critic], 1)
         fcOut_critic = F.relu(self.fc(merge_critic), inplace=True)
         value = self.critic_output(fcOut_critic)
 

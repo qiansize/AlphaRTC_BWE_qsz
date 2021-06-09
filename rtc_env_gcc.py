@@ -145,5 +145,5 @@ class GymEnv:
         # calculate reward:
         reward = self.get_reward()
 
-        return self.state, reward, done, self.gcc_decision
+        return self.state, reward, done, {}
 

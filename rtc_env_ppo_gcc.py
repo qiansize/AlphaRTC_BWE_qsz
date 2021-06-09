@@ -10,6 +10,7 @@ from queue import Queue
 import gym
 from gym import spaces
 import torch
+import math
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gym"))
 import alphartc_gym
@@ -69,6 +70,7 @@ class GymEnv:
         self.receiving_rate_list = []
         self.delay_list = []
         self.loss_ratio_list = []
+        self.bandwidth_prediction_list=[]
 
     def reset(self):
         # self.gym_env.reset(trace_path=random.choice(self.trace_set), report_interval_ms=self.step_time,
@@ -83,7 +85,7 @@ class GymEnv:
 
         # states = np.vstack((self.receiving_rate, self.delay, self.loss_ratio, self.prediction_history))
         self.state = torch.zeros((1, self.config['state_dim'], self.config['state_length']))
-        #self.gcc_estimator.reset()
+        self.gcc_estimator.reset()
 
         return self.state
 
@@ -93,9 +95,9 @@ class GymEnv:
         # reward = self.receiving_rate
         return reward
 
-    def step(self, action):
+    def step(self, action, last_prediction):
         # action: log to linear
-        bandwidth_prediction = log_to_linear(action)
+        bandwidth_prediction = last_prediction*pow(2, (2*action-1))
         #bandwidth_prediction = action
 
         # run the action, get related packet list:
@@ -112,7 +114,7 @@ class GymEnv:
             packet_info.payload_size = pkt["payload_size"]
             packet_info.bandwidth_prediction = bandwidth_prediction
             self.packet_record.on_receive(packet_info)
-            #self.gcc_estimator.report_states(pkt)
+            self.gcc_estimator.report_states(pkt)
 
         # calculate state:
         self.receiving_rate = self.packet_record.calculate_receiving_rate(interval=self.step_time)
@@ -128,7 +130,9 @@ class GymEnv:
         # np.delete(self.delay, 0, axis=0)
         self.loss_ratio = self.packet_record.calculate_loss_ratio(interval=self.step_time)
         self.loss_ratio_list.append(self.loss_ratio)
-        #self.gcc_decision = self.gcc_estimator.get_estimated_bandwidth()
+        self.bandwidth_prediction=bandwidth_prediction
+        self.bandwidth_prediction_list.append(bandwidth_prediction)
+        self.gcc_decision = self.gcc_estimator.get_estimated_bandwidth()
 
         self.state = self.state.clone().detach()
         self.state = torch.roll(self.state, -1, dims=-1)
@@ -144,6 +148,7 @@ class GymEnv:
         self.state[0, 0, -1] = self.receiving_rate / 300000.0
         self.state[0, 1, -1] = self.delay / 1000.0
         self.state[0, 2, -1] = self.loss_ratio
+        self.state[0, 3, -1] = self.bandwidth_prediction/ 300000.0
 
         # maintain list length
         if len(self.receiving_rate_list) == self.config['state_length']:
@@ -154,5 +159,5 @@ class GymEnv:
         # calculate reward:
         reward = self.get_reward()
 
-        return self.state, reward, done, {}
+        return self.state, reward, done, self.gcc_decision
 

@@ -2,7 +2,7 @@ import json
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from rtc_env_ppo import GymEnv
+from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.actor_critic import ActorCritic
 import rtc_env_ppo
@@ -40,7 +40,7 @@ def load_config():
 
         'default_bwe': 2,
         'train_seq_length': 1000,
-        'state_dim': 3,
+        'state_dim': 4,
         'state_length': 10,
         'action_dim': 1,
         'device': 'cpu',
@@ -93,13 +93,17 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     while time_step < max_num_steps:
         done = False
         state = torch.Tensor(env.reset())
+        gcc_estimation=300000
         while not done:
             action, _, _, _ = model.forward(state)
-            state, reward, done, _ = env.step(action)
+            state, reward, done, gcc_estimation= env.step(action, gcc_estimation)
             state = torch.Tensor(state)
             #record_state.append(state)
             #record_reward.append(reward)
-            record_action.append(log_to_linear(action))
+            real_estimation=gcc_estimation*pow(2, (2*action-1))
+            record_action.append(real_estimation)
+            print("gcc:",gcc_estimation, "real", real_estimation)
+
             time_step += 1
     model.random_action = True
     draw_state(record_action, record_state, data_path)
