@@ -90,19 +90,25 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     time_step = 0
     tmp = model.random_action
     model.random_action = False
+    time_to_guide = False
     while time_step < max_num_steps:
         done = False
         state = torch.Tensor(env.reset())
-        gcc_estimation=300000
+        last_estimation=300000
+        action = 0
         while not done:
-            action, _, _, _ = model.forward(state)
-            state, reward, done, gcc_estimation= env.step(action, gcc_estimation)
+            if time_step % 6 == 5:
+                action, _, _, _ = model.forward(state)
+                time_to_guide = True
+                print("action", pow(2,(action*2-1)))
+            state, reward, done, last_estimation= env.step(action, last_estimation, time_to_guide)
+            time_to_guide = False
             state = torch.Tensor(state)
             #record_state.append(state)
             #record_reward.append(reward)
-            real_estimation=gcc_estimation*pow(2, (2*action-1))
+            real_estimation=last_estimation
             record_action.append(real_estimation)
-            print("gcc:",gcc_estimation, "real", real_estimation)
+            print("real", real_estimation)
 
             time_step += 1
     model.random_action = True

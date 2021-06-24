@@ -7,7 +7,6 @@ import torch
 import matplotlib.pyplot as plt
 
 import utils_ppo
-from rtc_env import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.ppo_agent import PPO
 import torch
@@ -20,7 +19,7 @@ from utils_ppo import load_config
 import torch.multiprocessing as mp
 import numpy as np
 from ActorCritic import ActorCritic
-from rtc_env_ppo_gcc import GymEnv
+from rtc_env_gcc_with_RL import GymEnv
 
 
 def main():
@@ -54,7 +53,6 @@ def main():
     record_episode_reward = []
     episode_reward  = 0
     time_step = 0
-    time_to_guide= False
     # training loop
     for episode in range(max_num_episodes):
         while time_step < update_interval:
@@ -63,24 +61,15 @@ def main():
             last_estimation = 300000
             action = 0
             print("still working on")
-            if len(storage.is_terminals) != 0:
-                storage.is_terminals[-1] = True
             while not done and time_step < update_interval:
-                if time_step % 6 == 5:
-                    action = ppo.select_action(state, storage)
-                    time_to_guide=True
-
-                state, reward, done, last_estimation= env.step(action, last_estimation, time_to_guide)
-                time_to_guide= False
+                action = ppo.select_action(state, storage)
+                state, reward, done, last_estimation= env.step(action, last_estimation)
                 state = torch.Tensor(state)
                 # Collect data for update
-                if time_step % 6 == 5:
-                    storage.rewards.append(reward)
-                    storage.is_terminals.append(done)
+                storage.rewards.append(reward)
+                storage.is_terminals.append(done)
                 time_step += 1
                 episode_reward += reward
-
-        storage.is_terminals[-1] = True
         next_value = ppo.get_value(state)
         storage.compute_returns(next_value, gamma)
 
@@ -101,7 +90,7 @@ def main():
         episode_reward = 0
         time_step = 0
 
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_23_22_10_27.pth'))
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_18_17_46_25.pth'))
     # utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

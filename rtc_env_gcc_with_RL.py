@@ -107,13 +107,12 @@ class GymEnv:
         # reward = self.receiving_rate
         return mean_reward
 
-    def step(self, action, last_prediction, time_to_guide):
+    def step(self, action, last_prediction):
         # action: log to linear
-        if time_to_guide == True:
-            bandwidth_prediction = last_prediction*pow(2, (2*action-1))
-            self.gcc_estimator.change_bandwidth_estimation(bandwidth_prediction)
-        else:
-            bandwidth_prediction = last_prediction
+
+
+
+        bandwidth_prediction = last_prediction
         #bandwidth_prediction = action
 
         # run the action, get related packet list:
@@ -149,7 +148,9 @@ class GymEnv:
         self.loss_ratio_list.append(self.loss_ratio)
         self.bandwidth_prediction=bandwidth_prediction
         self.bandwidth_prediction_list.append(bandwidth_prediction)
-        self.gcc_decision = self.gcc_estimator.get_estimated_bandwidth()
+        self.gcc_decision= self.gcc_estimator.get_estimated_bandwidth()
+        self.delay_based_rate, self.loss_based_rate=self.gcc_estimator.get_inner_estimation()
+
 
         self.state = self.state.clone().detach()
         self.state = torch.roll(self.state, -1, dims=-1)
@@ -167,6 +168,7 @@ class GymEnv:
         self.state[0, 2, -1] = self.loss_ratio
         self.state[0, 3, -1] = self.bandwidth_prediction/ 300000.0
 
+        bandwidth_prediction = action * self.loss_based_rate + (1 - action) * self.delay_based_rate
         # maintain list length
         if len(self.receiving_rate_list) == self.config['state_length']:
             self.receiving_rate_list.pop(0)
@@ -175,6 +177,7 @@ class GymEnv:
 
         # calculate reward:
         reward = self.get_reward()
+        self.gcc_estimator.change_bandwidth_estimation(bandwidth_prediction)
 
-        return self.state, reward, done, self.gcc_decision
+        return self.state, reward, done, bandwidth_prediction
 

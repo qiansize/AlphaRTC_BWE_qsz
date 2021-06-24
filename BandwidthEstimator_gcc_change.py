@@ -121,27 +121,31 @@ class Estimator(object):
         BWE_by_delay, flag = self.get_estimated_bandwidth_by_delay()
         with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
             bwe_delay = BWE_by_delay / 1000
-            f.write(str(int(bwe_delay)) + '\n')
-
         BWE_by_loss = self.get_estimated_bandwidth_by_loss()
         with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
             bwe_loss = BWE_by_loss / 1000
-            f.write(str(int(bwe_loss)) + '\n')
-
         bandwidth_estimation = min(BWE_by_delay, BWE_by_loss)
         if flag == True:
             self.packets_list = []  # 清空packets_list
-
-        with open("debug.log", 'a+') as f:
-            bwe = bandwidth_estimation / 1000
-            f.write("Current BWE = " + str(int(bwe)) + " kbps" + '\n')
-            f.write("=============================================================\n")
-        with open("bandwidth_estimated.txt", 'a+') as f:
-            bwe = bandwidth_estimation / 1000
-            f.write(str(int(bwe)) + '\n')
-
         self.last_bandwidth_estimation = bandwidth_estimation
         return bandwidth_estimation
+
+    def get_inner_estimation(self):
+        BWE_by_delay, flag = self.get_estimated_bandwidth_by_delay()
+        with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
+            bwe_delay = BWE_by_delay / 1000
+        BWE_by_loss = self.get_estimated_bandwidth_by_loss()
+        with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
+            bwe_loss = BWE_by_loss / 1000
+        bandwidth_estimation = min(BWE_by_delay, BWE_by_loss)
+        if flag == True:
+            self.packets_list = []  # 清空packets_list
+        return BWE_by_delay,BWE_by_loss
+
+
+
+    def change_bandwidth_estimation(self,bandwidth_prediction):
+        self.last_bandwidth_estimation = bandwidth_prediction
 
     def get_estimated_bandwidth_by_delay(self):
         '''
@@ -459,7 +463,7 @@ class Estimator(object):
         else:
             estimated_throughput_bps = 1000 * 8 * estimated_throughput / Time_Interval
         estimated_throughput_kbps=estimated_throughput_bps/1000
-        troughput_based_limit=1.5 * estimated_throughput_bps + 10
+        troughput_based_limit=1.5 * estimated_throughput_bps + 10#todo disable this limitation to conbine with RL
         '''
         计算最大码率标准差
         最大码率标准差表征了链路容量 link capacity 的估计值相对于均值的波动程度。
