@@ -12,7 +12,7 @@ import gym
 from gym import spaces
 import torch
 import math
-
+import json
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gym"))
 import alphartc_gym
 from alphartc_gym.utils.packet_info import PacketInfo
@@ -43,7 +43,7 @@ def log_to_linear(value):
 
 
 class GymEnv:
-    def __init__(self, config, step_time=60, env_id=None):
+    def __init__(self, config, step_time=200, env_id=None):
         # self.env_id = str(env_id)
         self.env_id = env_id
         self.step_time = step_time
@@ -74,11 +74,30 @@ class GymEnv:
         self.loss_ratio_list = []
         self.bandwidth_prediction_list=[]
 
+    def get_ave_cap(self,trace_path):
+        with open(trace_path, "r") as trace_file:
+            duration_list = []
+            capacity_list = []
+            time_list = []
+            load_dict = json.load(trace_file)
+            uplink_info = load_dict["uplink"]["trace_pattern"]
+            for info in uplink_info:
+                duration_list.append(info["duration"])
+                capacity_list.append(info["capacity"] * 1000)
+                time_list.append(sum(duration_list))
+        all_band=0
+        all_duration=0
+        for i in range(len(duration_list)):
+            all_band+=duration_list[i]*capacity_list[i]/1000.0
+            all_duration+=duration_list[i]
+        return all_band/all_duration
     def reset(self):
-        # self.gym_env.reset(trace_path=random.choice(self.trace_set), report_interval_ms=self.step_time,
-        #                    # duration_time_ms=0)
-        self.gym_env.reset(trace_path='{}/WIRED_900kbs.json'.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+        self.trace_path = random.choice(self.trace_set)
+        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
                            duration_time_ms=0)
+        # self.trace_path = 'traces/Serial_268629959.json'
+        # self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+        #                    duration_time_ms=0)
         # self.gym_env.reset(trace_path='{}/trace_300k.json'.format(self.config['trace_dir']),
         #                    report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
@@ -89,7 +108,7 @@ class GymEnv:
         # self.delay = np.zeros(HISTORY_LENGTH)
         # self.loss_ratio = np.zeros(HISTORY_LENGTH)
         # self.prediction_history = np.zeros(HISTORY_LENGTH)
-
+        self.average_capacity_kbps=self.get_ave_cap(self.trace_path)
         # states = np.vstack((self.receiving_rate, self.delay, self.loss_ratio, self.prediction_history))
         self.state = torch.zeros((1, self.config['state_dim'], self.config['state_length']))
         self.gcc_estimator.reset()
@@ -99,9 +118,15 @@ class GymEnv:
 
     def get_reward(self):
         # reward = self.receiving_rate[HISTORY_LENGTH-1] - self.delay[HISTORY_LENGTH-1] - self.loss_ratio[HISTORY_LENGTH-1]
-        reward = self.receiving_rate/300000.0 - self.delay/1000.0 - self.loss_ratio
+        if self.delay < 50:
+            self.delay_reward = 0
+        elif self.delay < 150:
+            self.delay_reward = -(1+(self.delay-50)/100.0)
+        else:
+            self.delay_reward = -(2+(self.delay-150)/25.0)
+        reward = 10*self.receiving_rate/self.average_capacity_kbps/1000.0 + 3*self.delay_reward - self.loss_ratio
         self.reward_list.append(reward)
-        if len(self.reward_list) > 20:
+        if len(self.reward_list) > 6:
             self.reward_list.pop(0)
         mean_reward=mean(self.reward_list)
         # reward = self.receiving_rate
@@ -115,7 +140,7 @@ class GymEnv:
         else:
             bandwidth_prediction = last_prediction
         #bandwidth_prediction = action
-
+        bandwidth_prediction = clip(bandwidth_prediction, 1e2, 1e9)
         # run the action, get related packet list:
         packet_list, done = self.gym_env.step(bandwidth_prediction)
 
@@ -176,5 +201,5 @@ class GymEnv:
         # calculate reward:
         reward = self.get_reward()
 
-        return self.state, reward, done, self.gcc_decision
+        return self.state, reward, done, self.gcc_decision, self.delay, self.loss_ratio
 

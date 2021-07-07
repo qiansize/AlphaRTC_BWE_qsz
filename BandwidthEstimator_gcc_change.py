@@ -46,14 +46,14 @@ class Estimator(object):
         self.last_update_threshold_ms = -1
         self.now_ms = -1  # 当前系统时间
 
-        with open("debug.log", 'w') as f:
-            f.write("========================== debug.log =========================\n")
-        with open("bandwidth_estimated.txt", 'w') as f:
-            f.write("========================== bandwidth_estimated.txt =========================\n")
-        with open("bandwidth_estimated_by_loss.txt", 'w') as f:
-            f.write("========================== bandwidth_estimated_by_loss.txt =========================\n")
-        with open("bandwidth_estimated_by_delay.txt", 'w') as f:
-            f.write("========================== bandwidth_estimated_by_delay.txt =========================\n")
+        # with open("debug.log", 'w') as f:
+        #     f.write("========================== debug.log =========================\n")
+        # with open("bandwidth_estimated.txt", 'w') as f:
+        #     f.write("========================== bandwidth_estimated.txt =========================\n")
+        # with open("bandwidth_estimated_by_loss.txt", 'w') as f:
+        #     f.write("========================== bandwidth_estimated_by_loss.txt =========================\n")
+        # with open("bandwidth_estimated_by_delay.txt", 'w') as f:
+        #     f.write("========================== bandwidth_estimated_by_delay.txt =========================\n")
 
     # add by wb: reset estimator according to rtc_env_gcc
     def reset(self):
@@ -106,10 +106,10 @@ class Estimator(object):
         packet_info.bandwidth_prediction = self.last_bandwidth_estimation
         self.now_ms = packet_info.receive_timestamp  # 以最后一个包的到达时间作为系统时间
 
-        with open('debug.log', 'a+') as f:
-            assert (isinstance(stats, dict))
-            f.write(str(stats))
-            f.write('\n')
+        # with open('debug.log', 'a+') as f:
+        #     assert (isinstance(stats, dict))
+        #     f.write(str(stats))
+        #     f.write('\n')
 
         self.packets_list.append(packet_info)
 
@@ -118,12 +118,13 @@ class Estimator(object):
         计算估计带宽
         :return: 估计带宽 bandwidth_estimation
         '''
+        # print("len(self.packets_list) = "+str(len(self.packets_list)))
         BWE_by_delay, flag = self.get_estimated_bandwidth_by_delay()
-        with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
-            bwe_delay = BWE_by_delay / 1000
+        # with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
+        #     bwe_delay = BWE_by_delay / 1000
         BWE_by_loss = self.get_estimated_bandwidth_by_loss()
-        with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
-            bwe_loss = BWE_by_loss / 1000
+        # with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
+        #     bwe_loss = BWE_by_loss / 1000
         bandwidth_estimation = min(BWE_by_delay, BWE_by_loss)
         if flag == True:
             self.packets_list = []  # 清空packets_list
@@ -132,11 +133,11 @@ class Estimator(object):
 
     def get_inner_estimation(self):
         BWE_by_delay, flag = self.get_estimated_bandwidth_by_delay()
-        with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
-            bwe_delay = BWE_by_delay / 1000
+        # with open("bandwidth_estimated_by_delay.txt", 'a+') as f:
+        #     bwe_delay = BWE_by_delay / 1000
         BWE_by_loss = self.get_estimated_bandwidth_by_loss()
-        with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
-            bwe_loss = BWE_by_loss / 1000
+        # with open("bandwidth_estimated_by_loss.txt", 'a+') as f:
+        #     bwe_loss = BWE_by_loss / 1000
         bandwidth_estimation = min(BWE_by_delay, BWE_by_loss)
         if flag == True:
             self.packets_list = []  # 清空packets_list
@@ -153,6 +154,7 @@ class Estimator(object):
         :return: 基于延迟的估计带宽 bandwidth_estimation / 是否进行有效估计 flag
         '''
         if len(self.packets_list) == 0:  # 若该时间间隔内未收到包,则返回上一次带宽预测结果
+            # print("len(self.packets_list) == 0")
             return self.last_bandwidth_estimation, False
 
         # 1. 分包组
@@ -162,8 +164,8 @@ class Estimator(object):
 
         # 2. 计算包组梯度
         send_time_delta_list, _, _, delay_gradient_list = self.compute_deltas_for_pkt_group(pkt_group_list)
-        with open('debug.log', 'a+') as f:
-            f.write("delay_gradient_list = " + str(delay_gradient_list) + "\n")
+        # with open('debug.log', 'a+') as f:
+        #     f.write("delay_gradient_list = " + str(delay_gradient_list) + "\n")
 
         # 3. 计算斜率
         trendline = self.trendline_filter(delay_gradient_list, pkt_group_list)
@@ -181,9 +183,9 @@ class Estimator(object):
         # 6. 调整带宽
         bandwidth_estimation = self.rate_adaptation_by_delay(state)
 
-        with open("debug.log", 'a+') as f:
-            bwe = bandwidth_estimation / 1000
-            f.write("BWE by delay = " + str(int(bwe)) + " kbps" + ' ｜ ')
+        # with open("debug.log", 'a+') as f:
+        #     bwe = bandwidth_estimation / 1000
+        #     f.write("BWE by delay = " + str(int(bwe)) + " kbps" + ' ｜ ')
         return bandwidth_estimation, True
 
     def get_estimated_bandwidth_by_loss(self) -> int:
@@ -198,9 +200,9 @@ class Estimator(object):
 
         bandwidth_estimation = self.rate_adaptation_by_loss(loss_rate)
 
-        with open("debug.log", 'a+') as f:
-            bwe = bandwidth_estimation / 1000
-            f.write("BWE by loss = " + str(int(bwe)) + " kbps" + '\n')
+        # with open("debug.log", 'a+') as f:
+        #     bwe = bandwidth_estimation / 1000
+        #     f.write("BWE by loss = " + str(int(bwe)) + " kbps" + '\n')
         return bandwidth_estimation
 
     def caculate_loss_rate(self):
@@ -261,8 +263,8 @@ class Estimator(object):
                 first_send_time_in_group = pkt.send_timestamp
                 pkt_group = [pkt]
         # pkt_group_list.append(PacketGroup(pkt_group))
-        with open('debug.log', 'a+') as f:
-            f.write("num of groups = " + str(len(pkt_group_list)) + '\n')
+        # with open('debug.log', 'a+') as f:
+        #     f.write("num of groups = " + str(len(pkt_group_list)) + '\n')
 
         return pkt_group_list
 
@@ -294,6 +296,7 @@ class Estimator(object):
         :param pkt_group_list: 存有每个包组信息的list
         :return: 趋势斜率trendline
         '''
+        # print("delay_gradient_list : "+str(delay_gradient_list))
         for i, delay_gradient in enumerate(delay_gradient_list):
             accumulated_delay = self.acc_delay + delay_gradient
             smoothed_delay = kTrendlineSmoothingCoeff * self.smoothed_delay + (
@@ -309,10 +312,6 @@ class Estimator(object):
             if len(self.acc_delay_list) > kTrendlineWindowSize:
                 self.acc_delay_list.popleft()
                 self.smoothed_delay_list.popleft()
-        # with open("debug.log", 'a+') as f:
-        #     f.write("acc_delay_list : " + str(self.acc_delay_list) + '\n')
-        #     f.write("smoothed_delay_list : " + str(self.smoothed_delay_list) + '\n')
-
         if len(self.acc_delay_list) == kTrendlineWindowSize:
             avg_acc_delay = sum(self.acc_delay_list) / len(self.acc_delay_list)
             avg_smoothed_delay = sum(self.smoothed_delay_list) / len(self.smoothed_delay_list)
@@ -324,7 +323,9 @@ class Estimator(object):
                 numerator += (self.acc_delay_list[i] - avg_acc_delay) * (
                         self.smoothed_delay_list[i] - avg_smoothed_delay)
                 denominator += (self.acc_delay_list[i] - avg_acc_delay) * (self.acc_delay_list[i] - avg_acc_delay)
-            trendline = numerator / denominator
+
+            # print("self.acc_delay_list : "+str(self.acc_delay_list))
+            trendline = numerator / (denominator + 1e-05)
         else:
             trendline = None
             self.acc_delay_list.clear()
@@ -374,8 +375,8 @@ class Estimator(object):
         self.prev_trend = trendline
         self.update_threthold(modified_trend, now_ms)  # 更新判断过载的阈值
 
-        with open("debug.log", 'a+') as f:
-            f.write("overuse_flag = " + self.overuse_flag + '\n')
+        # with open("debug.log", 'a+') as f:
+        #     f.write("overuse_flag = " + self.overuse_flag + '\n')
 
     def update_threthold(self, modified_trend, now_ms):
         '''
@@ -450,20 +451,22 @@ class Estimator(object):
         :return: 估计码率
         '''
 
-        with open("debug.log",'a+') as f:
-            f.write("state : "+str(state)+'\n')
+        # with open("debug.log",'a+') as f:
+        #     f.write("state : "+str(state)+'\n')
 
         estimated_throughput = 0
         for pkt in self.packets_list:
             estimated_throughput += pkt.size
-
-        if self.last_update_ms == -1:  # todo:estimated_throughput_bps整合到开头
-            estimated_throughput_bps = 1000 * 8 * estimated_throughput / (
-                    self.now_ms - self.packets_list[0].receive_timestamp)
+        if len(self.packets_list) == 0:
+            estimated_throughput_bps = 0
         else:
-            estimated_throughput_bps = 1000 * 8 * estimated_throughput / Time_Interval
-        estimated_throughput_kbps=estimated_throughput_bps/1000
-        troughput_based_limit=1.5 * estimated_throughput_bps + 10#todo disable this limitation to conbine with RL
+            time_delta = self.now_ms - self.packets_list[0].receive_timestamp
+            time_delta = max(time_delta , Time_Interval)
+            estimated_throughput_bps = 1000 * 8 * estimated_throughput / time_delta
+        estimated_throughput_kbps = estimated_throughput_bps / 1000
+        # print("estimated_throughput_kbps = "+str(estimated_throughput_kbps))
+
+        troughput_based_limit = 1.5 * estimated_throughput_bps + 10#todo disable this limitation to conbine with RL
         '''
         计算最大码率标准差
         最大码率标准差表征了链路容量 link capacity 的估计值相对于均值的波动程度。
@@ -479,14 +482,14 @@ class Estimator(object):
                 self.rate_control_region_ = "kRcMaxUnknown"
 
             if self.rate_control_region_ == "kRcNearMax":
-                with open("debug.log",'a+') as f:
-                    f.write("rate_control_region_ == kRcNearMax\n")
+                # with open("debug.log",'a+') as f:
+                #     f.write("rate_control_region_ == kRcNearMax\n")
                 # 已经接近最大值了，此时增长需谨慎，加性增加
                 additive_increase_bps = self.AdditiveRateIncrease(self.now_ms, self.time_last_bitrate_change_)
                 bandwidth_estimation = self.last_bandwidth_estimation + additive_increase_bps
             elif self.rate_control_region_ == "kRcMaxUnknown":
-                with open("debug.log",'a+') as f:
-                    f.write("rate_control_region_ == kRcMaxUnknown\n")
+                # with open("debug.log",'a+') as f:
+                #     f.write("rate_control_region_ == kRcMaxUnknown\n")
                 multiplicative_increase_bps = self.MultiplicativeRateIncrease(self.now_ms,
                                                                               self.time_last_bitrate_change_)
                 bandwidth_estimation = self.last_bandwidth_estimation + multiplicative_increase_bps
@@ -495,8 +498,8 @@ class Estimator(object):
             bandwidth_estimation = min(bandwidth_estimation,troughput_based_limit)
             self.time_last_bitrate_change_ = self.now_ms
         elif state == 'Decrease':
-            with open("debug.log", 'a+') as f:
-                f.write("rate_control_region_ == "+str(self.rate_control_region_)+'\n')
+            # with open("debug.log", 'a+') as f:
+            #     f.write("rate_control_region_ == "+str(self.rate_control_region_)+'\n')
             beta = 0.85
             bandwidth_estimation = beta * estimated_throughput_bps + 0.5
             if bandwidth_estimation > self.last_bandwidth_estimation:

@@ -15,12 +15,12 @@ import gym
 import datetime
 import time
 import logging
-from utils_ppo import load_config
+from utils_gcc import load_config
 import torch.multiprocessing as mp
 import numpy as np
 from ActorCritic import ActorCritic
-from rtc_env_gcc_with_RL import GymEnv
-
+from rtc_env_gcc import GymEnv
+import utils_gcc
 
 def main():
     ############## Hyperparameters for the experiments ##############
@@ -63,7 +63,7 @@ def main():
     #         print("still working on")
     #         while not done and time_step < update_interval:
     #             action = ppo.select_action(state, storage)
-    #             state, reward, done, last_estimation= env.step(action, last_estimation)
+    #             state, reward, done, last_estimation,delay,loss= env.step(action, last_estimation)
     #             state = torch.Tensor(state)
     #             # Collect data for update
     #             storage.rewards.append(reward)
@@ -90,8 +90,8 @@ def main():
     #     episode_reward = 0
     #     time_step = 0
 
-    ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_23_22_10_27.pth'))
-    utils_ppo.draw_module(config, ppo.policy, data_path)
+    ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_26_20_41_58.pth'))
+    utils_gcc.draw_module(config, ppo.policy, data_path)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import json
 import torch
+
 import matplotlib.pyplot as plt
 import numpy as np
 from rtc_env_ppo_gcc import GymEnv
@@ -62,13 +63,14 @@ def load_config():
     return config
 
 
-def draw_state(record_action, record_state, path):
-    length = len(record_action)
+def draw_state(record_action, record_state,trace_y, path):
+    length1 = len(record_action)
 
-    plt.plot(range(length), record_action)
-    plt.xlabel('episode')
+    length2= len(trace_y)
+    plt.plot(range(length1), record_action, range(length2), trace_y)
+    plt.xlabel('step')
     plt.ylabel('action')
-    plt.ylim((0,1000000))
+    plt.ylim((0,2000000))
     # ylabel = ['receiving rate', 'delay', 'packet loss']
     # record_state = [t.numpy() for t in record_state]
     # record_state = np.array(record_state)
@@ -81,9 +83,36 @@ def draw_state(record_action, record_state, path):
     plt.savefig("{}test_result.jpg".format(path))
 
 
+def draw_trace(trace_path,path):
+    with open(trace_path, "r") as trace_file:
+        duration_list = []
+        capacity_list = []
+
+        load_dict = json.load(trace_file)
+        uplink_info = load_dict["uplink"]["trace_pattern"]
+        for info in uplink_info:
+            duration_list.append(info["duration"])
+            capacity_list.append(info["capacity"] * 1000)
+        print(duration_list)
+        print(capacity_list)
+        # duration_sum = sum(duration_list)
+        t = 0
+        x = []
+        y = []
+        for i in range(len(duration_list)):
+            x_tmp = np.arange(t, t + duration_list[i], 1)
+            for element in x_tmp:
+                x.append(element)
+                y.append(capacity_list[i])
+            t += duration_list[i]
+        plt.plot(x, y)
+        plt.ylim((0, 2000000))
+        plt.savefig("{}test_result.jpg".format(path))
+
 def draw_module(config,model, data_path, max_num_steps = 1000):
     env = GymEnv(config=config)
     record_reward = []
+    trace_path = 'trace_bak/qsz-loss_trace/0.07loss_trace1.json'
     record_state = []
     record_action = []
     episode_reward  = 0
@@ -91,25 +120,48 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     tmp = model.random_action
     model.random_action = False
     time_to_guide = False
-    while time_step < max_num_steps:
-        done = False
-        state = torch.Tensor(env.reset())
-        last_estimation=300000
-        action = 0
-        while not done:
-            if time_step % 6 == 5:
-                action, _, _, _ = model.forward(state)
-                time_to_guide = True
-                print("action", pow(2,(action*2-1)))
-            state, reward, done, last_estimation= env.step(action, last_estimation, time_to_guide)
-            time_to_guide = False
-            state = torch.Tensor(state)
-            #record_state.append(state)
-            #record_reward.append(reward)
-            real_estimation=last_estimation
-            record_action.append(real_estimation)
-            print("real", real_estimation)
 
-            time_step += 1
+    done = False
+    state = torch.Tensor(env.reset())
+    last_estimation=300000
+    action = 0
+    time_to_guide = False
+    while not done:
+        state, reward, done, last_estimation,delay,loss = env.step(action, last_estimation, time_to_guide)
+        state = torch.Tensor(state)
+        #record_state.append(state)
+        #record_reward.append(reward)
+        real_estimation=last_estimation
+        record_action.append(real_estimation)
+        print("real", real_estimation)
+
+        time_step += 1
     model.random_action = True
-    draw_state(record_action, record_state, data_path)
+    with open(trace_path, "r") as trace_file:
+        duration_list = []
+        capacity_list = []
+        time_list=[]
+        load_dict = json.load(trace_file)
+        uplink_info = load_dict["uplink"]["trace_pattern"]
+        for info in uplink_info:
+            duration_list.append(info["duration"])
+            capacity_list.append(info["capacity"] * 1000)
+            time_list.append(sum(duration_list))
+        print(duration_list)
+        print(capacity_list)
+        print(time_list)
+        # duration_sum = sum(duration_list)
+        t = 0
+        trace_x = []
+        trace_y = []
+        for i in range(len(duration_list)):
+            x_tmp = np.arange(t, t + duration_list[i], 200)
+            for element in x_tmp:
+                trace_x.append(element)
+                trace_y.append(capacity_list[i])
+            t += duration_list[i]
+        # plt.plot(trace_x, trace_y)
+        # plt.ylim((0, 2000000))
+        # plt.savefig("{}test_result_gcc.jpg".format(path))
+    draw_state(record_action, record_state, trace_y, path=data_path)
+    # draw_trace(trace_path='traces/0.15loss_trace9.json',path=data_path)

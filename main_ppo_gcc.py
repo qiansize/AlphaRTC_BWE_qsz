@@ -5,7 +5,7 @@ import os
 
 import torch
 import matplotlib.pyplot as plt
-
+import utils_gcc
 import utils_ppo
 from rtc_env import GymEnv
 from deep_rl.storage import Storage
@@ -17,6 +17,7 @@ import datetime
 import time
 import logging
 from utils_ppo import load_config
+
 import torch.multiprocessing as mp
 import numpy as np
 from ActorCritic import ActorCritic
@@ -26,10 +27,10 @@ from rtc_env_ppo_gcc import GymEnv
 def main():
     ############## Hyperparameters for the experiments ##############
     env_name = "AlphaRTC"
-    max_num_episodes = 1000     # maximal episodes
+    max_num_episodes = 1001     # maximal episodes
 
-    update_interval = 2000      # update policy every update_interval timesteps
-    save_interval = 50         # save model every save_interval episode
+    update_interval = 4000     # update policy every update_interval timesteps
+    save_interval = 20         # save model every save_interval episode
     exploration_param = 0.05    # the std var of action distribution
     K_epochs = 37               # update policy for K_epochs
     ppo_clip = 0.2              # clip parameter of PPO
@@ -50,7 +51,8 @@ def main():
     env = GymEnv(config=config)
     storage = Storage() # used for storing data
     ppo = PPO(state_dim, state_length,action_dim, exploration_param, lr, betas, gamma, K_epochs, ppo_clip)
-
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
+    # ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
     record_episode_reward = []
     episode_reward  = 0
     time_step = 0
@@ -70,7 +72,7 @@ def main():
                     action = ppo.select_action(state, storage)
                     time_to_guide=True
 
-                state, reward, done, last_estimation= env.step(action, last_estimation, time_to_guide)
+                state, reward, done, last_estimation,delay,loss= env.step(action, last_estimation, time_to_guide)
                 time_to_guide= False
                 state = torch.Tensor(state)
                 # Collect data for update
@@ -101,7 +103,7 @@ def main():
         episode_reward = 0
         time_step = 0
 
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_06_23_22_10_27.pth'))
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
     # utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

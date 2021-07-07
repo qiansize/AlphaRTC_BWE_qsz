@@ -77,7 +77,7 @@ class GymEnv:
     def reset(self):
         # self.gym_env.reset(trace_path=random.choice(self.trace_set), report_interval_ms=self.step_time,
         #                    # duration_time_ms=0)
-        self.gym_env.reset(trace_path='{}/WIRED_900kbs.json'.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+        self.gym_env.reset(trace_path='{}/loss_0.05.json'.format(self.config['trace_dir']), report_interval_ms=self.step_time,
                            duration_time_ms=0)
         # self.gym_env.reset(trace_path='{}/trace_300k.json'.format(self.config['trace_dir']),
         #                    report_interval_ms=self.step_time,
