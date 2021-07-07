@@ -51,8 +51,8 @@ def main():
     env = GymEnv(config=config)
     storage = Storage() # used for storing data
     ppo = PPO(state_dim, state_length,action_dim, exploration_param, lr, betas, gamma, K_epochs, ppo_clip)
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
-    # ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_18_59_43.pth'))
+    # ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_07_18_59_43.pth'))
     record_episode_reward = []
     episode_reward  = 0
     time_step = 0
@@ -103,7 +103,7 @@ def main():
         episode_reward = 0
         time_step = 0
 
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_04_37_33.pth'))
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_20_04_25.pth'))
     # utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

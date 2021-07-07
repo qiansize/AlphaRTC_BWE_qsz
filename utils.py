@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from rtc_env import GymEnv
 from deep_rl.storage import Storage
-from deep_rl.actor_critic import ActorCritic
+from deep_rl.actor_critic_cnn import ActorCritic
 
 
 def load_config():

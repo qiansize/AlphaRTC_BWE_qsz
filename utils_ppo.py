@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
-from deep_rl.actor_critic import ActorCritic
+from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo
 
 UNIT_M = 1000000
@@ -123,7 +123,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     record_loss=[]
     episode_reward  = 0
     time_step = 0
-    trace_path = 'trace_bak/qsz-loss_trace/0.07loss_trace1.json'
+    trace_path = 'traces/Serial_268629959.json'
     tmp = model.random_action
     model.random_action = False
     time_to_guide = False
@@ -167,12 +167,15 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         t = 0
         trace_x = []
         trace_y = []
-        for i in range(len(duration_list)):
-            x_tmp = np.arange(t, t + duration_list[i], 200)
-            for element in x_tmp:
-                trace_x.append(element)
+
+        i=0
+        for a in range(len(record_action)):
+            if t <= time_list[i]:
                 trace_y.append(capacity_list[i])
-            t += duration_list[i]
+            else:
+                i+=1
+                trace_y.append(capacity_list[i])
+            t += 200
         # plt.plot(trace_x, trace_y)
         # plt.ylim((0, 2000000))
         # plt.savefig("{}test_result_gcc.jpg".format(path))

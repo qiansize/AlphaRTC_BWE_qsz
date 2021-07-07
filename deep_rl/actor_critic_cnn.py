@@ -37,26 +37,16 @@ class ActorCritic(nn.Module):
         self.layer2_shape = 128
         self.numFcInput = 4096
 
-        self.layer1_shape_lstm = 256
-        self.layer2_shape_lstm = 256
-        self.numFcInput_lstm = 2560
+        self.rConv1d = nn.Conv1d(1, self.layer1_shape, 3)
+        self.dConv1d = nn.Conv1d(1, self.layer1_shape, 3)
+        self.lConv1d = nn.Conv1d(1, self.layer1_shape, 3)
+        self.pConv1d = nn.Conv1d(1, self.layer1_shape, 3)
 
-        # LSTM的网络结构
-        # self.rLSTM = nn.LSTM(1, self.layer1_shape_lstm, 2)
-        # self.dLSTM = nn.LSTM(1, self.layer1_shape_lstm, 2)
-        # self.lLSTM = nn.LSTM(1, self.layer1_shape_lstm, 2)
-        # self.pLSTM = nn.LSTM(1, self.layer1_shape_lstm, 2)
-
-        self.lstm = nn.LSTM(4, self.layer1_shape_lstm, 2)
-        self.lstm_crtic = nn.LSTM(4, self.layer1_shape_lstm, 2)
-        self.fc1 = nn.Linear(self.numFcInput_lstm, self.layer2_shape)
-        self.fc2 = nn.Linear(self.layer2_shape, self.layer2_shape)
-        self.fc3 = nn.Linear(self.numFcInput_lstm, self.layer2_shape)
-
+        self.fc = nn.Linear(self.numFcInput, self.layer2_shape)
         self.actor_output = nn.Linear(self.layer2_shape, action_dim)
         self.critic_output = nn.Linear(self.layer2_shape, 1)
         self.device = device
-        self.action_var = torch.full((action_dim,), exploration_param ** 2).to(self.device)
+        self.action_var = torch.full((action_dim,), exploration_param**2).to(self.device)
         self.random_action = True
 
     def init_params(self):
@@ -70,18 +60,31 @@ class ActorCritic(nn.Module):
             elif isinstance(m, nn.Conv2d):
                 init.xavier_uniform_(m.weight.data)
                 init.constant_(m.bias.data, 0.1)
-            elif isinstance(m, nn.LSTM):
-                init.xavier_uniform_(m.weight.data)
 
     def forward(self, inputs):
-        # actor
-        lstm_out, _ = self.lstm(inputs[:1, :, :].view(10, 1, 4))
-        # print("inputs.shape = " + str(inputs.shape))
-        # print("lstm_out.shape = "+str(lstm_out.shape))
-        fcOut_tmp = F.relu(self.fc1(lstm_out.view(1, -1)), inplace=True)
-        fcOut = F.relu(self.fc2(fcOut_tmp), inplace=True)
+        # value = self.critic(state)
+        # action_mean = self.actor(state)
+        # cov_mat = torch.diag(self.action_var).to(self.device)
+        # dist = MultivariateNormal(action_mean, cov_mat)
+        #
+        # if not self.random_action:
+        #     action = action_mean
+        # else:
+        #     action = dist.sample()
+        #
+        # action_logprobs = dist.log_prob(action)
+        #actor
+        receivingConv = F.relu(self.rConv1d(inputs[:, 0:1, :]), inplace=True)
+        delayConv = F.relu(self.dConv1d(inputs[:, 1:2, :]), inplace=True)
+        lossConv = F.relu(self.lConv1d(inputs[:, 2:3, :]), inplace=True)
+        predicationConv = F.relu(self.pConv1d(inputs[:, 3:4, :]), inplace=True)
+        receiving_flatten = receivingConv.view(receivingConv.shape[0], -1)
+        delay_flatten = delayConv.view(delayConv.shape[0], -1)
+        loss_flatten = lossConv.view(lossConv.shape[0], -1)
+        predication_flatten = predicationConv.view( predicationConv.shape[0], -1)
+        merge = torch.cat([receiving_flatten, delay_flatten, loss_flatten, predication_flatten], 1)
+        fcOut = F.relu(self.fc(merge), inplace=True)
         action_mean = torch.sigmoid(self.actor_output(fcOut))
-
         cov_mat = torch.diag(self.action_var).to(self.device)
         dist = MultivariateNormal(action_mean, cov_mat)
         if not self.random_action:
@@ -89,10 +92,17 @@ class ActorCritic(nn.Module):
         else:
             action = dist.sample()
         action_logprobs = dist.log_prob(action)
-        # critic
-        lstm_out, _ = self.lstm_crtic(inputs[:1, :, :].view(10, 1, 4))
-
-        fcOut_critic = F.relu(self.fc3(lstm_out.view(1, -1)), inplace=True)
+        #critic
+        receivingConv_critic = F.relu(self.rConv1d(inputs[:, 0:1, :]), inplace=True)
+        delayConv_critic = F.relu(self.dConv1d(inputs[:, 1:2, :]), inplace=True)
+        lossConv_critic = F.relu(self.lConv1d(inputs[:, 2:3, :]), inplace=True)
+        predicationConv_critic = F.relu(self.pConv1d(inputs[:, 3:4, :]), inplace=True)
+        receiving_flatten_critic = receivingConv.view(receivingConv_critic.shape[0], -1)
+        delay_flatten_critic = delayConv.view(delayConv_critic.shape[0], -1)
+        loss_flatten_critic = lossConv.view(lossConv_critic.shape[0], -1)
+        predication_flatten_critic = predicationConv.view(predicationConv_critic.shape[0], -1)
+        merge_critic = torch.cat([receiving_flatten_critic, delay_flatten_critic, loss_flatten_critic,predication_flatten_critic], 1)
+        fcOut_critic = F.relu(self.fc(merge_critic), inplace=True)
         value = self.critic_output(fcOut_critic)
 
         return action.detach(), action_logprobs, value, action_mean
@@ -106,3 +116,4 @@ class ActorCritic(nn.Module):
         dist_entropy = dist.entropy()
 
         return action_logprobs, torch.squeeze(value), dist_entropy
+

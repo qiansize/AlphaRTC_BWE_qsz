@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
-from deep_rl.actor_critic import ActorCritic
+from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo
 
 UNIT_M = 1000000
@@ -63,10 +63,11 @@ def load_config():
     return config
 
 
-def draw_state(record_action, record_state,trace_y, path):
+def draw_state(record_action, record_delay, record_loss ,trace_y, path):
     length1 = len(record_action)
 
     length2= len(trace_y)
+    plt.figure(1)
     plt.plot(range(length1), record_action, range(length2), trace_y)
     plt.xlabel('step')
     plt.ylabel('action')
@@ -81,6 +82,11 @@ def draw_state(record_action, record_state,trace_y, path):
     #     plt.ylabel(ylabel[i])
     plt.tight_layout()
     plt.savefig("{}test_result.jpg".format(path))
+    plt.figure(2)
+    plt.plot(range(length1),record_delay)
+    plt.xlabel('step')
+    plt.ylabel('delay')
+    plt.savefig("{}test_result_RL_delay.jpg".format(path))
 
 
 def draw_trace(trace_path,path):
@@ -112,9 +118,11 @@ def draw_trace(trace_path,path):
 def draw_module(config,model, data_path, max_num_steps = 1000):
     env = GymEnv(config=config)
     record_reward = []
-    trace_path = 'trace_bak/qsz-loss_trace/0.07loss_trace1.json'
+    trace_path = 'traces/Serial_268629959.json'
     record_state = []
     record_action = []
+    record_delay=[]
+    record_loss=[]
     episode_reward  = 0
     time_step = 0
     tmp = model.random_action
@@ -134,13 +142,14 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         real_estimation=last_estimation
         record_action.append(real_estimation)
         print("real", real_estimation)
-
+        record_delay.append(delay)
+        record_loss.append(loss)
         time_step += 1
     model.random_action = True
     with open(trace_path, "r") as trace_file:
         duration_list = []
         capacity_list = []
-        time_list=[]
+        time_list = []
         load_dict = json.load(trace_file)
         uplink_info = load_dict["uplink"]["trace_pattern"]
         for info in uplink_info:
@@ -154,14 +163,16 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         t = 0
         trace_x = []
         trace_y = []
-        for i in range(len(duration_list)):
-            x_tmp = np.arange(t, t + duration_list[i], 200)
-            for element in x_tmp:
-                trace_x.append(element)
+
+        i = 0
+        for a in range(len(record_action)):
+            if t <= time_list[i]:
                 trace_y.append(capacity_list[i])
-            t += duration_list[i]
+            else:
+                i += 1
+                trace_y.append(capacity_list[i])
+            t += 200
         # plt.plot(trace_x, trace_y)
         # plt.ylim((0, 2000000))
         # plt.savefig("{}test_result_gcc.jpg".format(path))
-    draw_state(record_action, record_state, trace_y, path=data_path)
-    # draw_trace(trace_path='traces/0.15loss_trace9.json',path=data_path)
+    draw_state(record_action, record_delay, record_loss, trace_y, path=data_path)
