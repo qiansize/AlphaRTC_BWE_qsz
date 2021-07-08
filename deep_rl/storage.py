@@ -14,15 +14,21 @@ class Storage:
         self.rewards = []
         self.is_terminals = []
         self.returns = []
+        self.switch_interval = 1000
+        self.counter = -1
 
     def compute_returns(self, next_value, gamma):
-        # compute returns for advantages 
+        # compute returns for advantages
+        returns_tmp = []
         returns = np.zeros(len(self.rewards)+1)
         returns[-1] = next_value
-        for i in reversed(range(len(self.rewards))):
+        for i in range(len(self.rewards) - 1, self.counter, -1):
             returns[i] = returns[i+1] * gamma * (1-self.is_terminals[i]) + self.rewards[i]
-            self.returns.append(torch.tensor([returns[i]]))
-        self.returns.reverse()
+            returns_tmp.append(torch.tensor([returns[i]]))
+            self.counter += 1
+        returns_tmp.reverse()
+        for element in returns_tmp:
+            self.returns.append(element)
 
     def clear_storage(self):
         self.actions.clear()
@@ -32,3 +38,4 @@ class Storage:
         self.rewards.clear()
         self.is_terminals.clear()
         self.returns.clear()
+        self.counter = -1

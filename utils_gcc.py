@@ -3,7 +3,7 @@ import torch
 
 import matplotlib.pyplot as plt
 import numpy as np
-from rtc_env_ppo_gcc import GymEnv
+from rtc_env_ppo_gcc_save import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo

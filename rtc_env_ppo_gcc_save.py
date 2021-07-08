@@ -61,7 +61,7 @@ class GymEnv:
         # trace_dir = os.path.join(os.path.dirname(__file__), "traces")
         trace_dir = self.config['trace_dir']
         # self.trace_set = glob.glob('{}/*/*.json'.format(trace_dir), recursive=True)
-        self.trace_set = glob.glob(f'{trace_dir}/*.json'.format(trace_dir), recursive=True)
+        self.trace_set = glob.glob(f'{trace_dir}/**/*.json'.format(trace_dir), recursive=True)
         self.action_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float64)
         self.observation_space = spaces.Box(
             low=np.zeros((STATE_DIMENSION, HISTORY_LENGTH)),
@@ -87,33 +87,17 @@ class GymEnv:
                 time_list.append(sum(duration_list))
         all_band=0
         all_duration=0
-
         for i in range(len(duration_list)):
             all_band+=duration_list[i]*capacity_list[i]/1000.0
             all_duration+=duration_list[i]
-            if all_duration>=1000*self.step_time:
-                return all_band/all_duration
         return all_band/all_duration
-
-    def replay(self):
-        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
-                           duration_time_ms=0)
-        self.packet_record.reset()
-        self.average_capacity_kbps = self.get_ave_cap(self.trace_path)
-        self.state = torch.zeros((1, self.config['state_dim'], self.config['state_length']))
-        self.gcc_estimator.reset()
-        self.reward_list = []
-
-        return self.state
-
-
     def reset(self):
-        self.trace_path = random.choice(self.trace_set)
-        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
-                           duration_time_ms=0)
-        # self.trace_path = 'traces/Serial_268629959.json'
-        # self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+        # self.trace_path = random.choice(self.trace_set)
+        # self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
+        self.trace_path = 'traces/Serial_268629959.json'
+        self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+                           duration_time_ms=0)
         # self.gym_env.reset(trace_path='{}/trace_300k.json'.format(self.config['trace_dir']),
         #                    report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
@@ -132,19 +116,30 @@ class GymEnv:
 
         return self.state
 
+    def replay(self):
+        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
+                           duration_time_ms=0)
+        self.packet_record.reset()
+        self.average_capacity_kbps = self.get_ave_cap(self.trace_path)
+        self.state = torch.zeros((1, self.config['state_dim'], self.config['state_length']))
+        self.gcc_estimator.reset()
+        self.reward_list = []
+
+        return self.state
+
     def get_reward(self):
         # reward = self.receiving_rate[HISTORY_LENGTH-1] - self.delay[HISTORY_LENGTH-1] - self.loss_ratio[HISTORY_LENGTH-1]
         if self.delay < 50:
-            self.delay_reward = 0
+            self.delay_reward = -self.delay/200
         elif self.delay < 150:
-            self.delay_reward = -(1 + (self.delay - 50) / 100.0)
+            self.delay_reward = -(1+(self.delay-50)/100.0)
         else:
-            self.delay_reward = -(2 + (self.delay - 150) / 50.0)
-        reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 2 * self.delay_reward - 10*self.loss_ratio
+            self.delay_reward = -(2+(self.delay-150)/50.0)
+        reward = 10*self.receiving_rate/self.average_capacity_kbps/1000.0 + 2*self.delay_reward - self.loss_ratio
         self.reward_list.append(reward)
         if len(self.reward_list) > 6:
             self.reward_list.pop(0)
-        mean_reward = mean(self.reward_list)
+        mean_reward=mean(self.reward_list)
         # reward = self.receiving_rate
         return mean_reward
 
