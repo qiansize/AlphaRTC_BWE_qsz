@@ -42,6 +42,11 @@ class ActorCritic(nn.Module):
         self.lConv1d = nn.Conv1d(1, self.layer1_shape, 3)
         self.pConv1d = nn.Conv1d(1, self.layer1_shape, 3)
 
+        self.rConv1d_critic = nn.Conv1d(1, self.layer1_shape, 3)
+        self.dConv1d_critic = nn.Conv1d(1, self.layer1_shape, 3)
+        self.lConv1d_critic = nn.Conv1d(1, self.layer1_shape, 3)
+        self.pConv1d_critic = nn.Conv1d(1, self.layer1_shape, 3)
+
         self.fc = nn.Linear(self.numFcInput, self.layer2_shape)
         self.actor_output = nn.Linear(self.layer2_shape, action_dim)
         self.critic_output = nn.Linear(self.layer2_shape, 1)
@@ -93,10 +98,10 @@ class ActorCritic(nn.Module):
             action = dist.sample()
         action_logprobs = dist.log_prob(action)
         #critic
-        receivingConv_critic = F.relu(self.rConv1d(inputs[:, 0:1, :]), inplace=True)
-        delayConv_critic = F.relu(self.dConv1d(inputs[:, 1:2, :]), inplace=True)
-        lossConv_critic = F.relu(self.lConv1d(inputs[:, 2:3, :]), inplace=True)
-        predicationConv_critic = F.relu(self.pConv1d(inputs[:, 3:4, :]), inplace=True)
+        receivingConv_critic = F.relu(self.rConv1d_critic(inputs[:, 0:1, :]), inplace=True)
+        delayConv_critic = F.relu(self.dConv1d_critic(inputs[:, 1:2, :]), inplace=True)
+        lossConv_critic = F.relu(self.lConv1d_critic(inputs[:, 2:3, :]), inplace=True)
+        predicationConv_critic = F.relu(self.pConv1d_critic(inputs[:, 3:4, :]), inplace=True)
         receiving_flatten_critic = receivingConv.view(receivingConv_critic.shape[0], -1)
         delay_flatten_critic = delayConv.view(delayConv_critic.shape[0], -1)
         loss_flatten_critic = lossConv.view(lossConv_critic.shape[0], -1)

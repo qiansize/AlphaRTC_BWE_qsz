@@ -108,12 +108,12 @@ class GymEnv:
 
 
     def reset(self):
-        self.trace_path = random.choice(self.trace_set)
-        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
-                           duration_time_ms=0)
-        # self.trace_path = 'traces/Serial_268629959.json'
-        # self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+        # self.trace_path = random.choice(self.trace_set)
+        # self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
+        self.trace_path = 'traces/Serial_268629871.json'
+        self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
+                           duration_time_ms=0)
         # self.gym_env.reset(trace_path='{}/trace_300k.json'.format(self.config['trace_dir']),
         #                    report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
@@ -135,11 +135,11 @@ class GymEnv:
     def get_reward(self):
         # reward = self.receiving_rate[HISTORY_LENGTH-1] - self.delay[HISTORY_LENGTH-1] - self.loss_ratio[HISTORY_LENGTH-1]
         if self.delay < 50:
-            self.delay_reward = 0
+            self.delay_reward = -self.delay/200
         elif self.delay < 150:
-            self.delay_reward = -(1 + (self.delay - 50) / 100.0)
+            self.delay_reward = -(0.25 + (self.delay - 50) / 100.0)
         else:
-            self.delay_reward = -(2 + (self.delay - 150) / 50.0)
+            self.delay_reward = -(1.25 + (self.delay - 150) / 50.0)
         reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 2 * self.delay_reward - 10*self.loss_ratio
         self.reward_list.append(reward)
         if len(self.reward_list) > 6:

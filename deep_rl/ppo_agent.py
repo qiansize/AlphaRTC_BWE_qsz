@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import time
 from torch import nn
-from .actor_critic import ActorCritic
+from .actor_critic_cnn import ActorCritic
 
 
 class PPO:
