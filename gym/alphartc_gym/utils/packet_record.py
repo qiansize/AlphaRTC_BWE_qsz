@@ -6,7 +6,7 @@ import numpy as np
 
 class PacketRecord:
     # feature_interval can be modified
-    def __init__(self, base_delay_ms=200):
+    def __init__(self, base_delay_ms=150):
         self.base_delay_ms = base_delay_ms
         self.reset()
 

@@ -31,7 +31,7 @@ def main():
     update_interval = 4  # update policy every update_interval timesteps
     trace_switch_interval = 1000
     save_interval = 50         # save model every save_interval episode
-    exploration_param = 0.05    # the std var of action distribution
+    exploration_param = 0.02    # the std var of action distribution
     K_epochs = 37               # update policy for K_epochs
     ppo_clip = 0.2              # clip parameter of PPO
     gamma = 0.99                # discount factor
@@ -51,13 +51,13 @@ def main():
     env = GymEnv(config=config)
     storage = Storage() # used for storing data
     ppo = PPO(state_dim, state_length,action_dim, exploration_param, lr, betas, gamma, K_epochs, ppo_clip)
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_20_43_24.pth'))
-    # ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_07_20_43_24.pth'))
+    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_09_12_34_58.pth'))
+    ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_09_12_34_58.pth'))
     record_episode_reward = []
     episode_reward = 0
     time_to_guide = False
     counter = 0
-    # training loop
+    #training loop
     for episode in range(max_num_episodes):
         while counter < update_interval:
             time_step = 0
@@ -108,7 +108,7 @@ def main():
         episode_reward = 0
         counter = 0
     #
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_16_20_39.pth'))
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_09_00_26_26.pth'))
     # utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

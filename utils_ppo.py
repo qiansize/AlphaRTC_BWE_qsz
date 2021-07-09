@@ -2,7 +2,7 @@ import json
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from rtc_env_ppo_gcc_save import GymEnv
+from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo
@@ -123,16 +123,17 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     record_loss=[]
     episode_reward  = 0
     time_step = 0
-    trace_path = 'traces/Serial_268629959.json'
+
     tmp = model.random_action
     model.random_action = False
     time_to_guide = False
 
     done = False
     state = torch.Tensor(env.reset())
+    trace_path = 'traces/Serial_268629871.json'
     last_estimation=300000
     action = 0
-    while not done:
+    while not done and time_step<=1000:
         if time_step % 6 == 5:
             action, _, _, _ = model.forward(state)
             time_to_guide = True
@@ -169,7 +170,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         trace_y = []
 
         i=0
-        for a in range(len(record_action)):
+        for a in range(1000):
             if t <= time_list[i]:
                 trace_y.append(capacity_list[i])
             else:
