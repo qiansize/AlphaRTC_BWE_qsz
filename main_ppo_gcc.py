@@ -28,12 +28,12 @@ def main():
     ############## Hyperparameters for the experiments ##############
     env_name = "AlphaRTC"
     max_num_episodes = 1001     # maximal episodes
-    update_interval = 4  # update policy every update_interval timesteps
+    update_interval = 8  # update policy every update_interval timesteps
     trace_switch_interval = 1000
     save_interval = 50         # save model every save_interval episode
-    exploration_param = 0.02    # the std var of action distribution
+    exploration_param = 0.1    # the std var of action distribution
     K_epochs = 37               # update policy for K_epochs
-    ppo_clip = 0.2              # clip parameter of PPO
+    ppo_clip = 0.1              # clip parameter of PPO
     gamma = 0.99                # discount factor
 
     lr = 3e-5                 # Adam parameters
@@ -51,8 +51,8 @@ def main():
     env = GymEnv(config=config)
     storage = Storage() # used for storing data
     ppo = PPO(state_dim, state_length,action_dim, exploration_param, lr, betas, gamma, K_epochs, ppo_clip)
-    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_09_12_34_58.pth'))
-    ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_09_12_34_58.pth'))
+    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20.pth'))
+    ppo.policy_old.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20.pth'))
     record_episode_reward = []
     episode_reward = 0
     time_to_guide = False
@@ -107,8 +107,8 @@ def main():
 
         episode_reward = 0
         counter = 0
-    #
-    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_09_00_26_26.pth'))
+
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20.pth'))
     # utils_ppo.draw_module(config, ppo.policy, data_path)
 
 

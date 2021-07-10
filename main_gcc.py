@@ -90,7 +90,7 @@ def main():
     #     episode_reward = 0
     #     time_step = 0
 
-    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_07_16_20_39.pth'))
+    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20.pth'))
     utils_gcc.draw_module(config, ppo.policy, data_path)
 
 

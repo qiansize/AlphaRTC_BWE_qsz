@@ -3,7 +3,7 @@ import torch
 
 import matplotlib.pyplot as plt
 import numpy as np
-from rtc_env_ppo_gcc_save import GymEnv
+from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo
@@ -118,7 +118,7 @@ def draw_trace(trace_path,path):
 def draw_module(config,model, data_path, max_num_steps = 1000):
     env = GymEnv(config=config)
     record_reward = []
-    trace_path = 'traces/Serial_268629959.json'
+    trace_path = 'traces/Serial_268629985.json'
     record_state = []
     record_action = []
     record_delay=[]
@@ -134,7 +134,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
     last_estimation=300000
     action = 0
     time_to_guide = False
-    while not done:
+    while not done and time_step <= 1000:
         state, reward, done, last_estimation,delay,loss = env.step(action, last_estimation, time_to_guide)
         state = torch.Tensor(state)
         #record_state.append(state)
@@ -165,7 +165,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         trace_y = []
 
         i = 0
-        for a in range(len(record_action)):
+        for a in range(1000):
             if t <= time_list[i]:
                 trace_y.append(capacity_list[i])
             else:

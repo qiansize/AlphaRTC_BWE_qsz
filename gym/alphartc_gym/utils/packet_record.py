@@ -39,12 +39,12 @@ class PacketRecord:
         self.last_seqNo[packet_info.ssrc] = packet_info.sequence_number
 
         # Calculate packet delay
-        if self.timer_delta is None:
-            # shift delay of the first packet to base delay
-            self.timer_delta = self.base_delay_ms - \
-                (packet_info.receive_timestamp - packet_info.send_timestamp)    
-        delay = self.timer_delta + \
-            (packet_info.receive_timestamp - packet_info.send_timestamp)
+        # if self.timer_delta is None:
+        #     # shift delay of the first packet to base delay
+        #     self.timer_delta = self.base_delay_ms - \
+        #         (packet_info.receive_timestamp - packet_info.send_timestamp)
+        delay = packet_info.receive_timestamp - packet_info.send_timestamp
+
         self.min_seen_delay = min(delay, self.min_seen_delay)
         
         # Check the last interval rtime
@@ -86,6 +86,7 @@ class PacketRecord:
         delay_list = self._get_result_list(interval=interval, key='delay')
         if delay_list:
             return np.mean(delay_list) - self.base_delay_ms
+            # return np.mean(delay_list)
         else:
             return 0
 

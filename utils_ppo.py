@@ -6,7 +6,7 @@ from rtc_env_ppo_gcc import GymEnv
 from deep_rl.storage import Storage
 from deep_rl.actor_critic_cnn import ActorCritic
 import rtc_env_ppo
-
+import numpy
 UNIT_M = 1000000
 MAX_BANDWIDTH_MBPS = 8
 MIN_BANDWIDTH_MBPS = 0.01
@@ -130,7 +130,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
 
     done = False
     state = torch.Tensor(env.reset())
-    trace_path = 'traces/Serial_268629871.json'
+    trace_path = 'traces/Serial_268629985.json'
     last_estimation=300000
     action = 0
     while not done and time_step<=1000:
@@ -139,6 +139,7 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
             time_to_guide = True
             print("action", pow(2,(action*2-1)))
         state, reward, done, last_estimation, delay, loss = env.step(action, last_estimation, time_to_guide)
+
         time_to_guide = False
         state = torch.Tensor(state)
         #record_state.append(state)
@@ -150,6 +151,10 @@ def draw_module(config,model, data_path, max_num_steps = 1000):
         print("real", real_estimation)
 
         time_step += 1
+    print(np.mean(record_delay))
+    delay_sort=record_delay[:]
+    delay_sort.sort()
+    print(delay_sort[500],delay_sort[950])
     model.random_action = True
     with open(trace_path, "r") as trace_file:
         duration_list = []

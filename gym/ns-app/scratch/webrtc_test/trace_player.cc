@@ -45,18 +45,22 @@ void TracePlayer::LoadTrace() {
     for (const auto &trace: uplink_traces) {
         TraceItem ti;
         ti.capacity_ = lexical_cast<double>(trace["capacity"]);
+        //ti.capacity_ = 100;
         ti.duration_ms_ = lexical_cast<double>(trace["duration"]);
         if (trace.find("loss") != trace.end()) {
             ti.loss_rate_ = lexical_cast<double>(trace["loss"]);
+            //ti.loss_rate_ = 0.5;
             last_available_value.loss_rate_ = ti.loss_rate_;
         } else {
             ti.loss_rate_ = last_available_value.loss_rate_;
         }
         if (trace.find("rtt") != trace.end()) {
             ti.rtt_ms_ = lexical_cast<std::uint64_t>(trace["rtt"]);
+            //ti.rtt_ms_=300;
             last_available_value.rtt_ms_ = ti.rtt_ms_;
         } else {
             ti.rtt_ms_ = last_available_value.rtt_ms_;
+            //ti.rtt_ms_ = 300;
         }
         traces.push_back(std::move(ti));
     }
