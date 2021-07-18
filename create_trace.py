@@ -61,7 +61,7 @@ if __name__ == "__main__":
     #     convert2trace(trace_file)
         # convert2trace_belgium(trace_file)
     for j in range(10):
-        change_interval= 1000
+        change_interval= 500
         capacity_set=[300,500,700,850,1000,1200,1400,1600]
         init_pi=[0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125]
         A=np.array([[0.95,0.05,0,0,0,0,0,0],
@@ -73,10 +73,10 @@ if __name__ == "__main__":
                     [0,0,0,0,0,0.025,0.95,0.025],
                     [0,0,0,0,0,0,0.05,0.95]])
         q_t = np.random.choice(capacity_set, size=1, p=init_pi)
-        duration_all = 2000*60
+        duration_all = 2000*200
         random_noise=True
         noise_range= 0.05
-        loss=0
+        loss=0.02
         capacity_list=[]
         duration_list=[]
         for i in range(int(duration_all/change_interval)):
@@ -100,10 +100,11 @@ if __name__ == "__main__":
         for i in range(int(duration_all/change_interval)):
             target_dic["uplink"]["trace_pattern"].append({"capacity": float(format(capacity_list[i],'.1f')),
                                                           "duration": duration_list[i],
-                                                          "loss":loss})
+                                                          "loss":loss,
+                                                          "rtt":300})
 
         f = json.dumps(target_dic, sort_keys=True, indent=4)
-        opt_file='/home/qsz/PycharmProjects/AlphaRTC_BWE_qsz/trace_bak/qsz-loss_trace/0.15loss_trace'+str(j)+'.json'
+        opt_file='/home/qsz/PycharmProjects/AlphaRTC_BWE_qsz/traces/loss_0.02_'+str(j)+'.json'
 
         with open (opt_file,'w') as json_file:
             json_file.write(f)

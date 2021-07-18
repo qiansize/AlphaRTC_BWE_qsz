@@ -54,44 +54,44 @@ def main():
     episode_reward  = 0
     time_step = 0
     # training loop
-    # for episode in range(max_num_episodes):
-    #     while time_step < update_interval:
-    #         done = False
-    #         state = torch.Tensor(env.reset()) #state tensor 4*10
-    #         last_estimation = 300000
-    #         action = 0
-    #         print("still working on")
-    #         while not done and time_step < update_interval:
-    #             action = ppo.select_action(state, storage)
-    #             state, reward, done, last_estimation,delay,loss= env.step(action, last_estimation)
-    #             state = torch.Tensor(state)
-    #             # Collect data for update
-    #             storage.rewards.append(reward)
-    #             storage.is_terminals.append(done)
-    #             time_step += 1
-    #             episode_reward += reward
-    #     next_value = ppo.get_value(state)
-    #     storage.compute_returns(next_value, gamma)
-    #
-    #     # update
-    #     policy_loss, val_loss = ppo.update(storage, state)
-    #     storage.clear_storage()
-    #     episode_reward /= time_step
-    #     record_episode_reward.append(episode_reward)
-    #     print('Episode {} \t Average policy loss, value loss, reward {}, {}, {}'.format(episode, policy_loss, val_loss, episode_reward))
-    #
-    #     if episode > 0 and not (episode % save_interval):
-    #         ppo.save_model(data_path)
-    #         plt.plot(range(len(record_episode_reward)), record_episode_reward)
-    #         plt.xlabel('Episode')
-    #         plt.ylabel('Averaged episode reward')
-    #         plt.savefig('%sreward_record.jpg' % (data_path))
-    #
-    #     episode_reward = 0
-    #     time_step = 0
+    for episode in range(max_num_episodes):
+        while time_step < update_interval:
+            done = False
+            state = torch.Tensor(env.reset()) #state tensor 4*10
+            last_estimation = 300000
+            action = 0
+            print("still working on")
+            while not done and time_step < update_interval:
+                action = ppo.select_action(state, storage)
+                state, reward, done, last_estimation,delay,loss= env.step(action, last_estimation)
+                state = torch.Tensor(state)
+                # Collect data for update
+                storage.rewards.append(reward)
+                storage.is_terminals.append(done)
+                time_step += 1
+                episode_reward += reward
+        next_value = ppo.get_value(state)
+        storage.compute_returns(next_value, gamma)
 
-    ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20.pth'))
-    utils_gcc.draw_module(config, ppo.policy, data_path)
+        # update
+        policy_loss, val_loss = ppo.update(storage, state)
+        storage.clear_storage()
+        episode_reward /= time_step
+        record_episode_reward.append(episode_reward)
+        print('Episode {} \t Average policy loss, value loss, reward {}, {}, {}'.format(episode, policy_loss, val_loss, episode_reward))
+
+        if episode > 0 and not (episode % save_interval):
+            ppo.save_model(data_path)
+            plt.plot(range(len(record_episode_reward)), record_episode_reward)
+            plt.xlabel('Episode')
+            plt.ylabel('Averaged episode reward')
+            plt.savefig('%sreward_record.jpg' % (data_path))
+
+        episode_reward = 0
+        time_step = 0
+
+    # ppo.policy.load_state_dict(torch.load('data/ppo_2021_07_10_16_25_20_with500trace.pth'))
+    # utils_gcc.draw_module(config, ppo.policy, data_path)
 
 
 if __name__ == '__main__':

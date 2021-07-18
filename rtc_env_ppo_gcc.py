@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gym"))
 import alphartc_gym
 from alphartc_gym.utils.packet_info import PacketInfo
 from alphartc_gym.utils.packet_record import PacketRecord
-from BandwidthEstimator_gcc_change import Estimator, PacketGroup
+from BandwidthEstimator_gcc_change import GCCEstimator, PacketGroup
 
 UNIT_M = 1000000
 MAX_BANDWIDTH_MBPS = 8
@@ -49,7 +49,7 @@ class GymEnv:
         self.step_time = step_time
         self.gym_env = alphartc_gym.Gym(self.env_id)
         self.packet_record = PacketRecord()
-        self.gcc_estimator = Estimator()
+        self.gcc_estimator = GCCEstimator()
         self.config = config
 
         # initialize state information:
@@ -107,13 +107,14 @@ class GymEnv:
         return self.state
 
 
-    def reset(self):
-        self.trace_path = random.choice(self.trace_set)
-        self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
+    def reset(self,trace_path):
+    # def reset(self):
+    #     self.trace_path = random.choice(self.trace_set)
+    #     self.gym_env.reset(trace_path=self.trace_path, report_interval_ms=self.step_time,
+    #                        duration_time_ms=0)
+        self.trace_path = 'traces/'+trace_path
+        self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
                            duration_time_ms=0)
-        # self.trace_path = 'traces/Serial_268629985.json'
-        # self.gym_env.reset(trace_path=self.trace_path.format(self.config['trace_dir']), report_interval_ms=self.step_time,
-        #                    duration_time_ms=0)
         # self.gym_env.reset(trace_path='{}/trace_300k.json'.format(self.config['trace_dir']),
         #                    report_interval_ms=self.step_time,
         #                    duration_time_ms=0)
@@ -134,21 +135,21 @@ class GymEnv:
 
     def get_reward(self):
         # reward = self.receiving_rate[HISTORY_LENGTH-1] - self.delay[HISTORY_LENGTH-1] - self.loss_ratio[HISTORY_LENGTH-1]
-        if self.delay < 50:
-            self.delay_reward = -self.delay/200
-        elif self.delay < 150:
-            self.delay_reward = -(0.25 + (self.delay - 50) / 100.0)
-        else:
-            self.delay_reward = -(1.25 + (self.delay - 150) / 50.0)
-        reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 3 * self.delay_reward - 10*self.loss_ratio
-        #if no base delay
-        # if self.delay < 150:
+        # if self.delay < 50:
         #     self.delay_reward = -self.delay/200
-        # elif self.delay < 300:
-        #     self.delay_reward = -(0.75 + (self.delay - 150) / 100.0)
+        # elif self.delay < 150:
+        #     self.delay_reward = -(0.25 + (self.delay - 50) / 100.0)
         # else:
-        #     self.delay_reward = -(2.25 + (self.delay - 300) / 50.0)
-        # reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 2 * self.delay_reward - 10*self.loss_ratio
+        #     self.delay_reward = -(1.25 + (self.delay - 150) / 50.0)
+        # reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 2 * self.delay_reward
+        #if no base delay
+        if self.delay < 150:
+            self.delay_reward = -self.delay/200
+        elif self.delay < 300:
+            self.delay_reward = -(0.75 + (self.delay - 150) / 100.0)
+        else:
+            self.delay_reward = -(2.25 + (self.delay - 300) / 50.0)
+        reward = 10 * self.receiving_rate / self.average_capacity_kbps / 1000.0 + 2 * self.delay_reward - 10*self.loss_ratio
         self.reward_list.append(reward)
         if len(self.reward_list) > 6:
             self.reward_list.pop(0)
@@ -221,9 +222,10 @@ class GymEnv:
             self.receiving_rate_list.pop(0)
             self.delay_list.pop(0)
             self.loss_ratio_list.pop(0)
+            self.bandwidth_prediction_list.pop(0)
 
         # calculate reward:
         reward = self.get_reward()
 
-        return self.state, reward, done, self.gcc_decision, self.delay, self.loss_ratio
+        return self.state, reward, done, self.gcc_decision, self.delay, self.loss_ratio, self.receiving_rate
 

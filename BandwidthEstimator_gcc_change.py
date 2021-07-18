@@ -15,7 +15,7 @@ k_down_ = 0.039
 Time_Interval = 200
 
 
-class Estimator(object):
+class GCCEstimator(object):
     def __init__(self):
         # ----- 包组时间相关 -----
         self.packets_list = []  # 记录当前时间间隔内收到的所有包

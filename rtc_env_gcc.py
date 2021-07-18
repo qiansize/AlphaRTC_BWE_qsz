@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gym"))
 import alphartc_gym
 from alphartc_gym.utils.packet_info import PacketInfo
 from alphartc_gym.utils.packet_record import PacketRecord
-from BandwidthEstimator_gcc_change import Estimator, PacketGroup
+from BandwidthEstimator_gcc_change import GCCEstimator, PacketGroup
 
 UNIT_M = 1000000
 MAX_BANDWIDTH_MBPS = 8
@@ -49,7 +49,7 @@ class GymEnv:
         self.step_time = step_time
         self.gym_env = alphartc_gym.Gym(self.env_id)
         self.packet_record = PacketRecord()
-        self.gcc_estimator = Estimator()
+        self.gcc_estimator = GCCEstimator()
         self.config = config
 
         # initialize state information:
